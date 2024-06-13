@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Perceptron AND Gate</title>
+    <style>
+        @font-face {
+            font-family: pixel;
+            src: url(kongtext.ttf);
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-family: pixel;
+            background-color: #373737;
+            color: white;
+            font-size: 1rem;
+        }
+
+        canvas {
+            border: 1px solid #ffffff;
+            background-color: beige;
+            height: 75vh;
+            width: 75vh;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <div>
+        Epoch:<span id="epoch"></span> <br>
+        MSE:<span id="MSE"></span> <br>
+        W1: <span id="w1"></span> <br>
+        W2: <span id="w2"></span> <br>
+        B: <span id="b"></span> <br>
+    </div>
+    <script>
+        // {X, Y, X AND Y}
+        var data = [
+            [0, 0, 0],
+            [0, 1, 0],
+            [1, 0, 0],
+            [1, 1, 1]
+        ];
+
+        var w1 = Math.random();
+        var w2 = Math.random();
+        var b = Math.random();
+
+        var MSE;
+        var learningRate = 0.1;
+
+        var totalIterations = 250;
+        var updateInterval = 1;
+        var delay = 50;
+
+        function evaluate(x, y, w1, w2, b) {
+            return activation(w1 * x + w2 * y + b);
+        }
+
+        function activation(x) {
+            return x < 0 ? 0 : x;
+        }
+
+        function drawLine(w1, w2, b) {
+            var canvas = document.getElementById('canvas');
+            var context = canvas.getContext('2d');
+            var padding = 0.1;
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+
+            context.beginPath();
+            context.moveTo(0, canvas.height*(1-padding));
+            context.lineTo(canvas.width, canvas.height*(1-padding));
+            context.moveTo(canvas.width*padding, 0);
+            context.lineTo(canvas.width*padding, canvas.height);
+            context.strokeStyle = 'violet';
+            context.stroke();
+
+
+            data.forEach(point => {
+                var x = padding + point[0] * (1 - 2 * padding);
+                var y = padding + point[1] * (1 - 2 * padding);
+                var canvasX = x * canvas.width;
+                var canvasY = canvas.height - (y * canvas.height);
+                context.beginPath();
+                context.arc(canvasX, canvasY, 30, 0, 2 * Math.PI, false);
+                context.fillStyle = point[2] ? 'green' : 'red';
+                context.fill();
+                context.fillStyle = "black";
+                context.font = "18px pixel";
+                context.textBaseline = 'middle';
+                context.textAlign = 'center';
+                var label = point[0]+'&'+point[1];
+                context.fillText(label, canvasX, canvasY);
+            });
+
+            var x1 = - padding;
+            var y1 = (-b - w1 * x1) / w2;
+            var x2 = 1 + padding;
+            var y2 = (-b - w1 * x2) / w2;
+
+            var canvasX1 = x1 * canvas.width;
+            var canvasY1 = canvas.height - (y1 * canvas.height);
+            var canvasX2 = x2 * canvas.width;
+            var canvasY2 = canvas.height - (y2 * canvas.height);
+
+            context.beginPath();
+            context.moveTo(canvasX1, canvasY1);
+            context.lineTo(canvasX2, canvasY2);
+            context.strokeStyle = 'blue';
+            context.stroke();
+
+        }
+
+        function trainOneEpoch() {
+            MSE = 0;
+            for (var i = 0; i < data.length; i++) {
+                var x = data[i][0];
+                var y = data[i][1];
+                var expected = data[i][2];
+                var res = evaluate(x, y, w1, w2, b);
+                var error = res - expected;
+                MSE += error * error;
+                var dw1 = error * x;
+                var dw2 = error * y;
+                var db = error;
+                w1 -= learningRate * dw1;
+                w2 -= learningRate * dw2;
+                b -= learningRate * db;
+            }
+            MSE /= data.length;
+            console.log(`Epoch ${currentIteration + 1}: MSE = ${MSE}`);
+            document.getElementById("epoch").innerHTML = currentIteration + 1;
+            document.getElementById("MSE").innerHTML = MSE;
+            document.getElementById("w1").innerHTML = w1;
+            document.getElementById("w2").innerHTML = w2;
+            document.getElementById("b").innerHTML = b;
+        }
+        function trainAndVisualize() {
+            if (currentIteration >= totalIterations) {
+                return;
+            }
+            trainOneEpoch();
+            if (currentIteration % updateInterval === 0) {
+                drawLine(w1, w2, b);
+            }
+            currentIteration++;
+            setTimeout(trainAndVisualize, delay);
+        }
+        var currentIteration = 0;
+        trainAndVisualize();
+    </script>
+</body>
+
+</html>
